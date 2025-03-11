@@ -47,9 +47,11 @@ class PetController {
 	private static final String VIEWS_PETS_CREATE_OR_UPDATE_FORM = "pets/createOrUpdatePetForm";
 
 	private final OwnerRepository owners;
+	private final ImageStorageService imageStorageService;
 
-	public PetController(OwnerRepository owners) {
+	public PetController(OwnerRepository owners, ImageStorageService imageStorageService) {
 		this.owners = owners;
+		this.imageStorageService = imageStorageService;
 	}
 
 	@ModelAttribute("types")
@@ -98,6 +100,7 @@ class PetController {
 
 	@PostMapping("/pets/new")
 	public String processCreationForm(Owner owner, @Valid Pet pet, BindingResult result,
+			@RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
 			RedirectAttributes redirectAttributes) {
 
 		if (StringUtils.hasText(pet.getName()) && pet.isNew() && owner.getPet(pet.getName(), true) != null)
@@ -110,6 +113,16 @@ class PetController {
 
 		if (result.hasErrors()) {
 			return VIEWS_PETS_CREATE_OR_UPDATE_FORM;
+		}
+
+		// Process the image file if provided
+		if (imageFile != null && !imageFile.isEmpty()) {
+			try {
+				String storedFileName = imageStorageService.storeImage(imageFile);
+				pet.setImagePath(storedFileName);
+			} catch (Exception e) {
+				redirectAttributes.addFlashAttribute("error", "Error uploading image: " + e.getMessage());
+			}
 		}
 
 		owner.addPet(pet);
@@ -125,6 +138,7 @@ class PetController {
 
 	@PostMapping("/pets/{petId}/edit")
 	public String processUpdateForm(Owner owner, @Valid Pet pet, BindingResult result,
+			@RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
 			RedirectAttributes redirectAttributes) {
 
 		String petName = pet.getName();
@@ -144,6 +158,27 @@ class PetController {
 
 		if (result.hasErrors()) {
 			return VIEWS_PETS_CREATE_OR_UPDATE_FORM;
+		}
+
+		// Get the existing pet to preserve the image path if no new image is provided
+		Pet existingPet = owner.getPet(pet.getId());
+		if (existingPet != null) {
+			pet.setImagePath(existingPet.getImagePath());
+		}
+
+		// Process the image file if provided
+		if (imageFile != null && !imageFile.isEmpty()) {
+			try {
+				// Delete old image if exists
+				if (pet.getImagePath() != null) {
+					imageStorageService.deleteImage(pet.getImagePath());
+				}
+				
+				String storedFileName = imageStorageService.storeImage(imageFile);
+				pet.setImagePath(storedFileName);
+			} catch (Exception e) {
+				redirectAttributes.addFlashAttribute("error", "Error uploading image: " + e.getMessage());
+			}
 		}
 
 		updatePetDetails(owner, pet);
