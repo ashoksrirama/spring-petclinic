@@ -1,4 +1,4 @@
-package org.springframework.samples.petclinic.storage;
+package org.springframework.samples.petclinic.owner;
 
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -20,33 +20,36 @@ import java.nio.file.Path;
 @RequestMapping("/images")
 public class ImageController {
 
-    private final ImageStorageService imageStorageService;
+	private final ImageStorageService imageStorageService;
 
-    public ImageController(ImageStorageService imageStorageService) {
-        this.imageStorageService = imageStorageService;
-    }
+	public ImageController(ImageStorageService imageStorageService) {
+		this.imageStorageService = imageStorageService;
+	}
 
-    /**
-     * Serve pet images
-     * @param fileName the image file name
-     * @return the image resource
-     */
-    @GetMapping("/{fileName:.+}")
-    public ResponseEntity<Resource> serveFile(@PathVariable String fileName) {
-        try {
-            Path filePath = imageStorageService.getImagePath(fileName);
-            Resource resource = new UrlResource(filePath.toUri());
-            
-            if (resource.exists()) {
-                return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
-                    .contentType(MediaType.IMAGE_JPEG)
-                    .body(resource);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-        } catch (MalformedURLException e) {
-            return ResponseEntity.badRequest().build();
-        }
-    }
+	/**
+	 * Serve pet images
+	 * @param fileName the image file name
+	 * @return the image resource
+	 */
+	@GetMapping("/{fileName:.+}")
+	public ResponseEntity<Resource> serveFile(@PathVariable String fileName) {
+		try {
+			Path filePath = imageStorageService.getImagePath(fileName);
+			Resource resource = new UrlResource(filePath.toUri());
+
+			if (resource.exists()) {
+				return ResponseEntity.ok()
+					.header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
+					.contentType(MediaType.IMAGE_JPEG)
+					.body(resource);
+			}
+			else {
+				return ResponseEntity.notFound().build();
+			}
+		}
+		catch (MalformedURLException e) {
+			return ResponseEntity.badRequest().build();
+		}
+	}
+
 }

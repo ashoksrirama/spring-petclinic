@@ -49,6 +49,7 @@ class PetController {
 	private static final String VIEWS_PETS_CREATE_OR_UPDATE_FORM = "pets/createOrUpdatePetForm";
 
 	private final OwnerRepository owners;
+
 	private final ImageStorageService imageStorageService;
 
 	public PetController(OwnerRepository owners, ImageStorageService imageStorageService) {
@@ -176,7 +177,7 @@ class PetController {
 				if (pet.getImagePath() != null) {
 					imageStorageService.deleteImage(pet.getImagePath());
 				}
-				
+
 				String storedFileName = imageStorageService.storeImage(imageFile);
 				pet.setImagePath(storedFileName);
 			}
